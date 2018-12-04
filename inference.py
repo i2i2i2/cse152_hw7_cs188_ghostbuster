@@ -426,6 +426,16 @@ class JointParticleFilter:
         weight with each position) is incorrect and may produce errors.
         """
         "*** YOUR CODE HERE ***"
+        possiblePos = list(itertools.product(self.legalPositions, repeat=self.numGhosts))
+        random.shuffle(possiblePos)
+
+        count = 0
+        self.particles = []
+        while len(self.particles) < self.numParticles:
+            for ptSet in self.numParticles:
+                self.particles.append(ptSet)
+                if len(self.particles) == self.numParticles:
+                    break
 
     def addGhostAgent(self, agent):
         """
