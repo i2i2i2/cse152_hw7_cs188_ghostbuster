@@ -13,6 +13,7 @@
 
 
 import util
+import os
 from game import Agent
 from game import Directions
 from keyboardAgents import KeyboardAgent
@@ -183,3 +184,36 @@ class GreedyBustersAgent(BustersAgent):
 
         return maxAct
 
+class BenchmarkBustersAgent(BustersAgent):
+    "An agent that charges the closest ghost."
+
+    def registerInitialState(self, gameState):
+        "Pre-computes the distance between every two points."
+        BustersAgent.registerInitialState(self, gameState)
+        self.distancer = Distancer(gameState.data.layout, False)
+
+    def chooseAction(self, gameState):
+        legal = [a for a in gameState.getLegalPacmanActions()]
+        livingGhosts = gameState.getLivingGhosts()
+        livingGhostPositionDistributions = \
+            [beliefs for i, beliefs in enumerate(self.ghostBeliefs)
+             if livingGhosts[i+1]]
+        "*** YOUR CODE HERE ***"
+        maxPt = (0, 0)
+        maxProb = 0
+
+        for distrib in livingGhostPositionDistributions:
+            for p, prob in distrib.items():
+                if prob > maxProb:
+                    maxPt = p
+                    maxProb = prob
+
+        if maxProb > 0.1:
+            os._exit(0)
+
+        return 'Stop'
+
+
+# time converges to 0.95 vs number of particle
+
+# time takes 300 particles vs converges to some percentage
