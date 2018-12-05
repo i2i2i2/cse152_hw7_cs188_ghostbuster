@@ -429,10 +429,9 @@ class JointParticleFilter:
         possiblePos = list(itertools.product(self.legalPositions, repeat=self.numGhosts))
         random.shuffle(possiblePos)
 
-        count = 0
         self.particles = []
         while len(self.particles) < self.numParticles:
-            for ptSet in self.numParticles:
+            for ptSet in possiblePos:
                 self.particles.append(ptSet)
                 if len(self.particles) == self.numParticles:
                     break
@@ -483,6 +482,32 @@ class JointParticleFilter:
         emissionModels = [busters.getObservationDistribution(dist) for dist in noisyDistances]
 
         "*** YOUR CODE HERE ***"
+        allPossible = util.Counter()
+        # calc probability for each set
+        for ptSet in self.particles:
+            ptList = list(ptSet)
+            prob = 1
+            for i in range(self.numGhosts):
+                if noisyDistances[i] == None:
+                    ptList[i] = self.getJailPosition(i)
+                else:
+                    prob *= emissionModels[i][util.manhattanDistance(pacmanPosition, ptList[i])]
+            allPossible[tuple(ptList)] += prob
+
+        # check if all probability is 0
+        found = False
+        for _, prob in allPossible.items():
+            if prob != 0:
+                found = True
+                break
+        if not found:
+            self.initializeParticles()
+            return
+
+        # resample
+        for i in range(self.numParticles):
+            self.particles[i] = util.sample(allPossible)
+
 
     def getParticleWithGhostInJail(self, particle, ghostIndex):
         """
@@ -543,6 +568,11 @@ class JointParticleFilter:
             # now loop through and update each entry in newParticle...
 
             "*** YOUR CODE HERE ***"
+            setGhostPositions(gameState, newParticle)
+
+            for i, pt in enumerate(newParticle):
+                posDist = getPositionDistributionForGhost(gameState, i, self.ghostAgents[i])
+                newParticle[i] = util.sample(posDist)
 
             "*** END YOUR CODE HERE ***"
             newParticles.append(tuple(newParticle))
@@ -550,7 +580,11 @@ class JointParticleFilter:
 
     def getBeliefDistribution(self):
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        allPossible = util.Counter()
+        for ptSet in self.particles:
+            allPossible[ptSet] += 1
+        allPossible.normalize()
+        return allPossible
 
 # One JointInference module is shared globally across instances of MarginalInference
 jointInference = JointParticleFilter()
